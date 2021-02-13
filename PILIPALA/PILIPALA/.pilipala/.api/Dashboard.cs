@@ -12,45 +12,35 @@ using Microsoft.AspNetCore.Http;
 
 using WaterLibrary.Utils;
 using WaterLibrary.pilipala;
-using WaterLibrary.pilipala.Entity.PostProp;
 using WaterLibrary.pilipala.Entity;
+using WaterLibrary.pilipala.Component;
 
-using PILIPALA.Models.Form;
 
-namespace PILIPALA.system
+namespace PILIPALA.API
 {
-    using WaterLibrary.pilipala.Components;
+    using PILIPALA.Models.Form;
 
     [EnableCors("DefaultPolicy")]
-    public class UserController : Controller
+    public class Dashboard : Controller
     {
         private Authentication Authentication;
         private readonly Reader Reader, BackUpReader;
         private readonly Writer Writer;
         private readonly Counter Counter;
         private readonly CommentLake CommentLake;
-        private new readonly User User;
+        private new User User;
 
-        private readonly ICORE CORE;
-
-        public UserController(ICORE CORE, Models.UserModel User)
+        public Dashboard(Models.UserModel UserModel)
         {
-            this.CORE = CORE;
-
             if ((DateTime.Now - Convert.ToDateTime(CORE.MySqlManager.GetKey($"SELECT TokenTime FROM {CORE.Tables.User} WHERE GroupType = 'user'"))).TotalMinutes <= 120)
             {
-                ComponentFactory ComponentFactory = new();
-
-                CORE.CoreReady += ComponentFactory.Ready;
-
-                this.User = CORE.Run(User.Account, User.PWD);
-
-                Authentication = ComponentFactory.GenAuthentication();
-                Reader = ComponentFactory.GenReader(Reader.ReadMode.DirtyRead);
-                BackUpReader = ComponentFactory.GenReader(Reader.ReadMode.DirtyRead, true);
-                Writer = ComponentFactory.GenWriter();
-                Counter = ComponentFactory.GenCounter();
-                CommentLake = ComponentFactory.GenCommentLake();
+                User = ComponentFactory.Instance.GenUser(UserModel.PWD);
+                Authentication = ComponentFactory.Instance.GenAuthentication();
+                Reader = ComponentFactory.Instance.GenReader(Reader.ReadMode.DirtyRead);
+                BackUpReader = ComponentFactory.Instance.GenReader(Reader.ReadMode.DirtyRead, true);
+                Writer = ComponentFactory.Instance.GenWriter();
+                Counter = ComponentFactory.Instance.GenCounter();
+                CommentLake = ComponentFactory.Instance.GenCommentLake();
             }
         }
 
@@ -63,11 +53,8 @@ namespace PILIPALA.system
         /// <returns></returns>
         public string Login(string UserAccount, string UserPWD)
         {
-            ComponentFactory ComponentFactory = new();
-            CORE.CoreReady += ComponentFactory.Ready;
-            CORE.Run(UserAccount, UserPWD);
-
-            Authentication = ComponentFactory.GenAuthentication();
+            User = ComponentFactory.Instance.GenUser(UserPWD);
+            Authentication = ComponentFactory.Instance.GenAuthentication();
             KeyPair KeyPair = new KeyPair(2048);
             Authentication.SetPrivateKey(KeyPair.PrivateKey);
             Authentication.UpdateTokenTime();
@@ -118,13 +105,13 @@ namespace PILIPALA.system
                     /* 评论列表 */
                     var CommentSet = CommentLake.GetComments(ID);
 
-                    string Title = Convert.ToString(Reader.GetPostProp<Title>(ID));
+                    string Title = Convert.ToString(Reader.GetPostProp(ID, PostProp.Title));
 
                     var item = new Hashtable
                     {
                     { "ID", ID },
                     { "Title", Title },
-                    { "Content",Title == ""?Reader.GetPostProp<Content>(ID):"" },
+                    { "Content",Title == ""?Reader.GetPostProp(ID,PostProp.Content):"" },
                     { "CommentCount",  CommentSet.Count},
                     { "MonthCommentCount", CommentSet.WithinMonthCount() },
                     { "WeekCommentCount", CommentSet.WithinWeekCount() },
@@ -183,7 +170,7 @@ namespace PILIPALA.system
         {
             return Authentication
                 .Auth(Token, () =>
-                   Reader.GetPost<PostID>("^")
+                   Reader.GetPost(PostProp.PostID, "^")
                       .ForEach((item) =>
                       {
                           item.PropertyContainer = new()
@@ -207,7 +194,7 @@ namespace PILIPALA.system
         public string Get_neg_posts_by_PostID(string Token, int PostID)
         {
             return Authentication.Auth(Token, () =>
-             BackUpReader.GetPost<PostID>(PostID.ToString())
+             BackUpReader.GetPost(PostProp.PostID, PostID.ToString())
                  .ForEach((item) =>
                  {
                      item.PropertyContainer.Add("MD5", item.MD5());

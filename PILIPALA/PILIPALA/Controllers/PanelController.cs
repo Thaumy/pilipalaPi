@@ -4,15 +4,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-using PILIPALA.system.Theme;
 using WaterLibrary.Utils;
 using WaterLibrary.pilipala;
 using WaterLibrary.pilipala.Entity;
-using WaterLibrary.pilipala.Entity.PostProp;
-using WaterLibrary.pilipala.Components;
+using WaterLibrary.pilipala.Component;
+
 
 namespace PILIPALA.Controllers
 {
+    using PILIPALA.Theme;
+
     public class PanelController : Controller
     {
         private readonly Reader Reader;
@@ -20,19 +21,13 @@ namespace PILIPALA.Controllers
         private readonly Counter Counter;
         private readonly CommentLake CommentLake;
         private readonly ThemeHandler ThemeHandler;
-        private readonly ComponentFactory ComponentFactory = new();
 
-        public PanelController(ICORE CORE, ThemeHandler ThemeHandler)
+        public PanelController(ThemeHandler ThemeHandler)
         {
-            CORE.CoreReady += ComponentFactory.Ready;
-
-            /* 启动内核 */
-            CORE.Run();
-
-            Reader = ComponentFactory.GenReader(Reader.ReadMode.CleanRead);
-            Writer = ComponentFactory.GenWriter();
-            Counter = ComponentFactory.GenCounter();
-            CommentLake = ComponentFactory.GenCommentLake();
+            Reader = ComponentFactory.Instance.GenReader(Reader.ReadMode.CleanRead);
+            Writer = ComponentFactory.Instance.GenWriter();
+            Counter = ComponentFactory.Instance.GenCounter();
+            CommentLake = ComponentFactory.Instance.GenCommentLake();
             this.ThemeHandler = ThemeHandler;
         }
 
@@ -46,7 +41,7 @@ namespace PILIPALA.Controllers
             }
 
             PostSet PostSet置顶 = new PostSet();
-            foreach (Post el in Reader.GetPost<ArchiveName>(REGEXP("ToppedArchive")))
+            foreach (Post el in Reader.GetPost(PostProp.ArchiveName, REGEXP("ToppedArchive")))
             {
                 el.PropertyContainer.Add("CommentCount", CommentLake.GetCommentCount(el.PostID));
                 PostSet置顶.Add(el);
@@ -54,7 +49,7 @@ namespace PILIPALA.Controllers
             ViewBag.置顶文章 = PostSet置顶;
 
             PostSet PostSet其他 = new PostSet();
-            foreach (Post el in Reader.GetPost<ArchiveName>(REGEXP("DefaultArchive")))
+            foreach (Post el in Reader.GetPost(PostProp.ArchiveName, REGEXP("DefaultArchive")))
             {
                 el.PropertyContainer.Add("CommentCount", CommentLake.GetCommentCount(el.PostID));
                 PostSet其他.Add(el);
@@ -71,7 +66,6 @@ namespace PILIPALA.Controllers
                 ViewBag.Layout = null;
                 return View();
             }
-
         }
         public ActionResult Content(int ID, bool ajax)
         {
@@ -90,11 +84,11 @@ namespace PILIPALA.Controllers
 
             ViewBag.CommentList = CommentLake.GetComments(ID);//评论数据
 
-            ViewBag.PrevID = Reader.Smaller<PostID>(ID, REGEXP(), PostPropEnum.ArchiveName);
-            ViewBag.PrevTitle = Reader.GetPostProp<Title>(ViewBag.PrevID);
+            ViewBag.PrevID = Reader.Smaller(ID, PostProp.PostID, REGEXP(), PostProp.ArchiveName);
+            ViewBag.PrevTitle = Reader.GetPostProp(ViewBag.PrevID, PostProp.Title);
 
-            ViewBag.NextID = Reader.Bigger<PostID>(ID, REGEXP(), PostPropEnum.ArchiveName);
-            ViewBag.NextTitle = Reader.GetPostProp<Title>(ViewBag.NextID);
+            ViewBag.NextID = Reader.Bigger(ID, PostProp.PostID, REGEXP(), PostProp.ArchiveName);
+            ViewBag.NextTitle = Reader.GetPostProp(ViewBag.NextID, PostProp.Title);
 
 
 

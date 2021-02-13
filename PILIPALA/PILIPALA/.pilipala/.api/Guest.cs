@@ -8,33 +8,26 @@ using Microsoft.AspNetCore.Cors;
 
 using WaterLibrary.pilipala;
 using WaterLibrary.pilipala.Entity;
-using WaterLibrary.pilipala.Entity.PostProp;
-using WaterLibrary.pilipala.Components;
+using WaterLibrary.pilipala.Component;
 
-using PILIPALA.Models.Form;
 
-namespace PILIPALA.system
+namespace PILIPALA.API
 {
-    public class GuestController : Controller
+    using PILIPALA.Models.Form;
+
+    public class Guest : Controller
     {
         public Reader Reader;
         public Writer Writer;
         public Counter Counter;
         public CommentLake CommentLake;
 
-        private readonly ComponentFactory ComponentFactory = new();
-
-        public GuestController(ICORE CORE)
+        public Guest()
         {
-            CORE.CoreReady += ComponentFactory.Ready;
-
-            /* 启动内核 */
-            CORE.Run();
-
-            Reader = ComponentFactory.GenReader(Reader.ReadMode.DirtyRead, true);
-            Writer = ComponentFactory.GenWriter();
-            Counter = ComponentFactory.GenCounter();
-            CommentLake = ComponentFactory.GenCommentLake();
+            Reader = ComponentFactory.Instance.GenReader(Reader.ReadMode.DirtyRead, true);
+            Writer = ComponentFactory.Instance.GenWriter();
+            Counter = ComponentFactory.Instance.GenCounter();
+            CommentLake = ComponentFactory.Instance.GenCommentLake();
         }
 
         /// <summary>
@@ -44,7 +37,7 @@ namespace PILIPALA.system
         [HttpPost]
         public int Decrease_StarCount_by_PostID(int PostID)
         {
-            int StarCount = Convert.ToInt32(Reader.GetPostProp<StarCount>(PostID));
+            int StarCount = Convert.ToInt32(Reader.GetPostProp(PostID, PostProp.StarCount));
 
             Counter.SetStarCount(PostID, StarCount - 1);
 
@@ -57,7 +50,7 @@ namespace PILIPALA.system
         [HttpPost]
         public int Increase_StarCount_by_PostID(int PostID)
         {
-            int StarCount = Convert.ToInt32(Reader.GetPostProp<StarCount>(PostID));
+            int StarCount = Convert.ToInt32(Reader.GetPostProp(PostID, PostProp.StarCount));
 
             Counter.SetStarCount(PostID, StarCount + 1);
 
@@ -73,7 +66,7 @@ namespace PILIPALA.system
         public int Increase_UVCount_by_PostID(int PostID)
         {
 
-            int UVCount = Convert.ToInt32(Reader.GetPostProp<UVCount>(PostID));
+            int UVCount = Convert.ToInt32(Reader.GetPostProp(PostID, PostProp.UVCount));
 
             Counter.SetUVCount(PostID, UVCount + 1);
 
