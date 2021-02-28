@@ -4,30 +4,31 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-using WaterLibrary.Utils;
-using WaterLibrary.pilipala;
-using WaterLibrary.pilipala.Entity;
-using WaterLibrary.pilipala.Component;
-
 
 namespace PILIPALA.Controllers
 {
     using PILIPALA.Theme;
+    using WaterLibrary.Utils;
+    using WaterLibrary.pilipala.Entity;
+    using WaterLibrary.pilipala.Component;
 
     public class PanelController : Controller
     {
-        private readonly Reader Reader;
-        private readonly Writer Writer;
-        private readonly Counter Counter;
-        private readonly CommentLake CommentLake;
-        private readonly ThemeHandler ThemeHandler;
+        private Reader Reader;
+        private Writer Writer;
+        private Counter Counter;
+        private CommentLake CommentLake;
+        private ThemeHandler ThemeHandler;
+        private LightningLink LightningLink;
 
-        public PanelController(ThemeHandler ThemeHandler)
+        public PanelController(ComponentFactory compoFty, ThemeHandler ThemeHandler)
         {
-            Reader = ComponentFactory.Instance.GenReader(Reader.ReadMode.CleanRead);
-            Writer = ComponentFactory.Instance.GenWriter();
-            Counter = ComponentFactory.Instance.GenCounter();
-            CommentLake = ComponentFactory.Instance.GenCommentLake();
+            Reader = compoFty.GenReader(Reader.ReadMode.CleanRead);
+            Writer = compoFty.GenWriter();
+            Counter = compoFty.GenCounter();
+            CommentLake = compoFty.GenCommentLake();
+            LightningLink = compoFty.GenLightningLink();
+
             this.ThemeHandler = ThemeHandler;
         }
 
@@ -44,14 +45,19 @@ namespace PILIPALA.Controllers
             foreach (Post el in Reader.GetPost(PostProp.ArchiveName, REGEXP("ToppedArchive")))
             {
                 el.PropertyContainer.Add("CommentCount", CommentLake.GetCommentCount(el.PostID));
+                el.Cover = LightningLink.ApplyLink(el.Cover);
+                el.Content = LightningLink.ApplyLink(el.Content);
                 PostSet置顶.Add(el);
             }
+
             ViewBag.置顶文章 = PostSet置顶;
 
             PostSet PostSet其他 = new PostSet();
             foreach (Post el in Reader.GetPost(PostProp.ArchiveName, REGEXP("DefaultArchive")))
             {
                 el.PropertyContainer.Add("CommentCount", CommentLake.GetCommentCount(el.PostID));
+                el.Cover = LightningLink.ApplyLink(el.Cover);
+                el.Content = LightningLink.ApplyLink(el.Content);
                 PostSet其他.Add(el);
             }
             ViewBag.其他文章 = PostSet其他;
@@ -78,7 +84,11 @@ namespace PILIPALA.Controllers
 
             ViewBag.ID = ID;//请求ID
 
-            ViewBag.Post = Reader.GetPost(ID);//文章数据
+            var Post = Reader.GetPost(ID);//闪链应用
+            Post.Cover = LightningLink.ApplyLink(Post.Cover);
+            Post.Content = LightningLink.ApplyLink(Post.Content);
+
+            ViewBag.Post = Post; //文章数据
             ViewBag.Post.PropertyContainer.Add("CommentCount", CommentLake.GetCommentCount(ID));//添加评论计数，可优化
 
 

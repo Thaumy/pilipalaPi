@@ -22,12 +22,12 @@ namespace PILIPALA.API
         public Counter Counter;
         public CommentLake CommentLake;
 
-        public Guest()
+        public Guest(ComponentFactory compoFty)
         {
-            Reader = ComponentFactory.Instance.GenReader(Reader.ReadMode.DirtyRead, true);
-            Writer = ComponentFactory.Instance.GenWriter();
-            Counter = ComponentFactory.Instance.GenCounter();
-            CommentLake = ComponentFactory.Instance.GenCommentLake();
+            Reader = compoFty.GenReader(Reader.ReadMode.DirtyRead, true);
+            Writer = compoFty.GenWriter();
+            Counter = compoFty.GenCounter();
+            CommentLake = compoFty.GenCommentLake();
         }
 
         /// <summary>
@@ -96,7 +96,7 @@ namespace PILIPALA.API
         [HttpPost]
         public string CommentLakeCaptcha(CommentModel CommentModel)
         {
-            CommentLake.AddComment(new Comment()
+            CommentLake.NewComment(new Comment()
             {
                 PostID = CommentModel.PostID,
                 User = CommentModel.User,

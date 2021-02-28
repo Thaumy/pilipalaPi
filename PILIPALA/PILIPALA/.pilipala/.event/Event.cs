@@ -8,20 +8,53 @@ namespace PILIPALA.Event
     public class Event
     {
         public delegate void BeforeEvent();
-        public event BeforeEvent Doc_head_before;
-        public event BeforeEvent Doc_body_before;
-        public event BeforeEvent Doc_foot_before;
-        public event BeforeEvent Doc_all_before;
-        public event BeforeEvent Post_load_before;
-        public event BeforeEvent PostContent_get_before;
+
+        public class Before
+        {
+            public static void GetPostEventHandler()
+            {
+                GetPost += () => { };
+                GetPost();
+            }
+
+            public static event BeforeEvent DocHead;
+            public event BeforeEvent DocBody;
+            public event BeforeEvent DocFoot;
+            public event BeforeEvent DocComplete;
+
+            public static event BeforeEvent GetPost;
+            public static event BeforeEvent CreatePost;
+            public event BeforeEvent DeletePost;
+
+            public event BeforeEvent CreateComment;
+            public event BeforeEvent DeleteComment;
+        }
+
+
+
 
         public delegate void AfterEvent();
-        public event AfterEvent Doc_head_after;
-        public event AfterEvent Doc_body_after;
-        public event AfterEvent Doc_foot_after;
-        public event AfterEvent Doc_all_after;
-        public event AfterEvent Post_load_after;
-        public event AfterEvent PostContent_get_after;
 
+
+        public class After
+        {
+            public static void GetPostEventHandler()
+            {
+                GetPost += () => { };
+                GetPost();
+            }
+
+            public event AfterEvent DocHead;
+            public event AfterEvent DocBody;
+            public event AfterEvent DocFoot;
+            public event AfterEvent DocComplete;
+
+            public static event AfterEvent GetPost;
+            public event AfterEvent CreatePost;
+            public event AfterEvent DeletePost;
+
+            public event AfterEvent CreateComment;
+            public event AfterEvent DeleteComment;
+        }
     }
 }

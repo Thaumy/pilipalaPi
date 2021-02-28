@@ -23,6 +23,7 @@ namespace PILIPALA.API
     [EnableCors("DefaultPolicy")]
     public class Dashboard : Controller
     {
+        private ComponentFactory compoFty;
         private Authentication Authentication;
         private readonly Reader Reader, BackUpReader;
         private readonly Writer Writer;
@@ -30,18 +31,19 @@ namespace PILIPALA.API
         private readonly CommentLake CommentLake;
         private new User User;
 
-        public Dashboard(Models.UserModel UserModel)
+        public Dashboard(ComponentFactory compoFty, Models.UserModel UserModel)
         {
             if ((DateTime.Now - Convert.ToDateTime(CORE.MySqlManager.GetKey($"SELECT TokenTime FROM {CORE.Tables.User} WHERE GroupType = 'user'"))).TotalMinutes <= 120)
             {
-                User = ComponentFactory.Instance.GenUser(UserModel.PWD);
-                Authentication = ComponentFactory.Instance.GenAuthentication();
-                Reader = ComponentFactory.Instance.GenReader(Reader.ReadMode.DirtyRead);
-                BackUpReader = ComponentFactory.Instance.GenReader(Reader.ReadMode.DirtyRead, true);
-                Writer = ComponentFactory.Instance.GenWriter();
-                Counter = ComponentFactory.Instance.GenCounter();
-                CommentLake = ComponentFactory.Instance.GenCommentLake();
+                User = compoFty.GenUser(UserModel.Account, UserModel.PWD);
+                Authentication = compoFty.GenAuthentication(User);
+                Reader = compoFty.GenReader(Reader.ReadMode.DirtyRead);
+                BackUpReader = compoFty.GenReader(Reader.ReadMode.DirtyRead, true);
+                Writer = compoFty.GenWriter();
+                Counter = compoFty.GenCounter();
+                CommentLake = compoFty.GenCommentLake();
             }
+            this.compoFty = compoFty;
         }
 
 
@@ -53,8 +55,8 @@ namespace PILIPALA.API
         /// <returns></returns>
         public string Login(string UserAccount, string UserPWD)
         {
-            User = ComponentFactory.Instance.GenUser(UserPWD);
-            Authentication = ComponentFactory.Instance.GenAuthentication();
+            User = compoFty.GenUser(UserAccount, UserPWD);
+            Authentication = compoFty.GenAuthentication(User);
             KeyPair KeyPair = new KeyPair(2048);
             Authentication.SetPrivateKey(KeyPair.PrivateKey);
             Authentication.UpdateTokenTime();
@@ -140,7 +142,7 @@ namespace PILIPALA.API
         public bool Delete_comment_by_CommentID(string Token, int CommentID)
         {
             return Authentication.Auth(Token, () =>
-                  CommentLake.DeleteComment(CommentID));
+                  CommentLake.DelComment(CommentID));
         }
 
 
